@@ -236,6 +236,38 @@ class StorageService {
     }
   }
 
+  /// Returns the `Video Splitter/Converted` folder, creating it if needed.
+  Future<Directory> getConvertedFolder() async {
+    final root = await getAppRootFolder();
+    final folder = Directory(p.join(root.path, 'Converted'));
+    if (!await folder.exists()) {
+      await folder.create(recursive: true);
+    }
+    return folder;
+  }
+
+  /// Creates a unique output file path for a format-converted video.
+  Future<String> createFormatOutputPath(String originalFilePath, String formatExtension) async {
+    final folder = await getConvertedFolder();
+    final base = p.basenameWithoutExtension(originalFilePath);
+    final ext = formatExtension.startsWith('.') ? formatExtension : '.$formatExtension';
+    
+    var candidate = p.join(folder.path, '${base}_converted$ext');
+    if (!await File(candidate).exists()) {
+      return candidate;
+    }
+
+    var counter = 1;
+    while (true) {
+      final suffix = counter.toString().padLeft(3, '0');
+      candidate = p.join(folder.path, '${base}_converted_$suffix$ext');
+      if (!await File(candidate).exists()) {
+        return candidate;
+      }
+      counter++;
+    }
+  }
+
   /// Lets the user jump straight to Explorer/file manager for a folder.
   /// See ResultScreen / HistoryScreen for the "Open Folder" button.
   Future<bool> folderExists(String path) => Directory(path).exists();

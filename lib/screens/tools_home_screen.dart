@@ -4,6 +4,7 @@ import '../services/permission_service.dart';
 import '../services/video_service.dart';
 import 'compression/compression_config_screen.dart';
 import 'flipping/flip_config_screen.dart';
+import 'format/format_config_screen.dart';
 import 'framerate/framerate_config_screen.dart';
 import 'history_screen.dart';
 import 'split_home_screen.dart';
@@ -202,6 +203,38 @@ class _ToolsHomeScreenState extends State<ToolsHomeScreen> {
     }
   }
 
+  Future<void> _handleFormatPick() async {
+    setState(() => _busy = true);
+    try {
+      final granted = await _permissionService.ensureStoragePermissions();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission is needed to read videos.')),
+          );
+        }
+        return;
+      }
+
+      final file = await _videoService.pickVideo();
+      if (file == null || !mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FormatConfigScreen(sourceFile: file),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not pick video: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   List<VideoToolItem> _buildTools(BuildContext context) {
     return [
       VideoToolItem(
@@ -253,6 +286,14 @@ class _ToolsHomeScreenState extends State<ToolsHomeScreen> {
         accentColor: Colors.amber.shade800,
         badge: 'Offline',
         onTap: _handleFrameRatePick,
+      ),
+      VideoToolItem(
+        title: 'Video Format Conversion',
+        description: 'Convert between MP4, MOV, MKV, AVI, and WebM with custom resolution and quality.',
+        icon: Icons.transform,
+        accentColor: Colors.blue.shade700,
+        badge: 'Offline',
+        onTap: _handleFormatPick,
       ),
     ];
   }

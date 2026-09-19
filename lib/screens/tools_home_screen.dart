@@ -5,6 +5,7 @@ import '../services/video_service.dart';
 import 'compression/compression_config_screen.dart';
 import 'history_screen.dart';
 import 'split_home_screen.dart';
+import 'resizing/resize_config_screen.dart';
 import 'trimming/trim_config_screen.dart';
 
 class VideoToolItem {
@@ -103,6 +104,38 @@ class _ToolsHomeScreenState extends State<ToolsHomeScreen> {
     }
   }
 
+  Future<void> _handleResizePick() async {
+    setState(() => _busy = true);
+    try {
+      final granted = await _permissionService.ensureStoragePermissions();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission is needed to read videos.')),
+          );
+        }
+        return;
+      }
+
+      final file = await _videoService.pickVideo();
+      if (file == null || !mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ResizeConfigScreen(sourceFile: file),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not pick video: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   List<VideoToolItem> _buildTools(BuildContext context) {
     return [
       VideoToolItem(
@@ -130,6 +163,14 @@ class _ToolsHomeScreenState extends State<ToolsHomeScreen> {
         accentColor: Colors.deepOrange,
         badge: 'Offline',
         onTap: _handleTrimPick,
+      ),
+      VideoToolItem(
+        title: 'Video Resizing',
+        description: 'Downscale resolution with presets (4K→1080p, 1080p→720p, 720p→480p) or custom size.',
+        icon: Icons.photo_size_select_large,
+        accentColor: Colors.purple,
+        badge: 'Offline',
+        onTap: _handleResizePick,
       ),
     ];
   }

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/permission_service.dart';
 import '../services/video_service.dart';
 import 'compression/compression_config_screen.dart';
+import 'flipping/flip_config_screen.dart';
+import 'framerate/framerate_config_screen.dart';
 import 'history_screen.dart';
 import 'split_home_screen.dart';
 import 'resizing/resize_config_screen.dart';
@@ -136,6 +138,70 @@ class _ToolsHomeScreenState extends State<ToolsHomeScreen> {
     }
   }
 
+  Future<void> _handleFlipPick() async {
+    setState(() => _busy = true);
+    try {
+      final granted = await _permissionService.ensureStoragePermissions();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission is needed to read videos.')),
+          );
+        }
+        return;
+      }
+
+      final file = await _videoService.pickVideo();
+      if (file == null || !mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FlipConfigScreen(sourceFile: file),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not pick video: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _handleFrameRatePick() async {
+    setState(() => _busy = true);
+    try {
+      final granted = await _permissionService.ensureStoragePermissions();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission is needed to read videos.')),
+          );
+        }
+        return;
+      }
+
+      final file = await _videoService.pickVideo();
+      if (file == null || !mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FrameRateConfigScreen(sourceFile: file),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not pick video: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   List<VideoToolItem> _buildTools(BuildContext context) {
     return [
       VideoToolItem(
@@ -171,6 +237,22 @@ class _ToolsHomeScreenState extends State<ToolsHomeScreen> {
         accentColor: Colors.purple,
         badge: 'Offline',
         onTap: _handleResizePick,
+      ),
+      VideoToolItem(
+        title: 'Video Flip',
+        description: 'Flip video horizontally or vertically with a live preview before exporting.',
+        icon: Icons.flip,
+        accentColor: Colors.cyan,
+        badge: 'Offline',
+        onTap: _handleFlipPick,
+      ),
+      VideoToolItem(
+        title: 'Frame Rate Conversion',
+        description: 'Change FPS with presets (60→30, 30→24, 30→60) or set a custom frame rate.',
+        icon: Icons.speed,
+        accentColor: Colors.amber.shade800,
+        badge: 'Offline',
+        onTap: _handleFrameRatePick,
       ),
     ];
   }

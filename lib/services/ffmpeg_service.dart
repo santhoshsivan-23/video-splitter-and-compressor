@@ -12,8 +12,9 @@ class MediaInfo {
   final int durationSeconds;
   final int? width;
   final int? height;
+  final double? fps;
 
-  MediaInfo({required this.durationSeconds, this.width, this.height});
+  MediaInfo({required this.durationSeconds, this.width, this.height, this.fps});
 }
 
 /// Wraps FFmpeg/FFprobe access for both supported platforms.
@@ -57,17 +58,24 @@ class FFmpegService {
 
     int? width;
     int? height;
+    double? fps;
     final streams = info.getStreams();
     for (final stream in streams) {
       final type = stream.getType();
       if (type == 'video') {
         width = stream.getWidth();
         height = stream.getHeight();
+        // Try to parse r_frame_rate (e.g. "30000/1001") or avg_frame_rate
+        final props = stream.getAllProperties();
+        if (props != null) {
+          fps = _parseFps(props['r_frame_rate']?.toString()) ??
+                _parseFps(props['avg_frame_rate']?.toString());
+        }
         break;
       }
     }
 
-    return MediaInfo(durationSeconds: durationSeconds, width: width, height: height);
+    return MediaInfo(durationSeconds: durationSeconds, width: width, height: height, fps: fps);
   }
 
   Future<MediaInfo> _probeWindows(String sourcePath) async {
@@ -92,16 +100,33 @@ class FFmpegService {
 
     int? width;
     int? height;
+    double? fps;
     final streams = (json['streams'] as List?) ?? [];
     for (final s in streams) {
       if (s['codec_type'] == 'video') {
         width = s['width'] as int?;
         height = s['height'] as int?;
+        fps = _parseFps(s['r_frame_rate']?.toString()) ??
+              _parseFps(s['avg_frame_rate']?.toString());
         break;
       }
     }
 
-    return MediaInfo(durationSeconds: durationSeconds, width: width, height: height);
+    return MediaInfo(durationSeconds: durationSeconds, width: width, height: height, fps: fps);
+  }
+
+  /// Parses FFmpeg fraction strings like "30000/1001" → 29.97, or "30/1" → 30.0.
+  static double? _parseFps(String? raw) {
+    if (raw == null || raw.isEmpty || raw == '0/0') return null;
+    final parts = raw.split('/');
+    if (parts.length == 2) {
+      final num = double.tryParse(parts[0]);
+      final den = double.tryParse(parts[1]);
+      if (num != null && den != null && den > 0) {
+        return double.parse((num / den).toStringAsFixed(2));
+      }
+    }
+    return double.tryParse(raw);
   }
 
   /// Cuts one `[startSeconds, startSeconds + lengthSeconds)` window of

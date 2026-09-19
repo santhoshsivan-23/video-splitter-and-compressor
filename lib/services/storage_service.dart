@@ -172,6 +172,70 @@ class StorageService {
     }
   }
 
+  /// Returns the `Video Splitter/Flipped` folder, creating it if needed.
+  Future<Directory> getFlippedFolder() async {
+    final root = await getAppRootFolder();
+    final folder = Directory(p.join(root.path, 'Flipped'));
+    if (!await folder.exists()) {
+      await folder.create(recursive: true);
+    }
+    return folder;
+  }
+
+  /// Creates a unique output file path for a flipped video.
+  Future<String> createFlippedOutputPath(String originalFilePath) async {
+    final folder = await getFlippedFolder();
+    final base = p.basenameWithoutExtension(originalFilePath);
+    final ext = p.extension(originalFilePath).isNotEmpty ? p.extension(originalFilePath) : '.mp4';
+    
+    var candidate = p.join(folder.path, '${base}_flipped$ext');
+    if (!await File(candidate).exists()) {
+      return candidate;
+    }
+
+    var counter = 1;
+    while (true) {
+      final suffix = counter.toString().padLeft(3, '0');
+      candidate = p.join(folder.path, '${base}_flipped_$suffix$ext');
+      if (!await File(candidate).exists()) {
+        return candidate;
+      }
+      counter++;
+    }
+  }
+
+  /// Returns the `Video Splitter/FrameRate` folder, creating it if needed.
+  Future<Directory> getFrameRateFolder() async {
+    final root = await getAppRootFolder();
+    final folder = Directory(p.join(root.path, 'FrameRate'));
+    if (!await folder.exists()) {
+      await folder.create(recursive: true);
+    }
+    return folder;
+  }
+
+  /// Creates a unique output file path for a frame-rate-converted video.
+  Future<String> createFrameRateOutputPath(String originalFilePath) async {
+    final folder = await getFrameRateFolder();
+    final base = p.basenameWithoutExtension(originalFilePath);
+    final ext = p.extension(originalFilePath).isNotEmpty ? p.extension(originalFilePath) : '.mp4';
+    
+    var candidate = p.join(folder.path, '${base}_fps$ext');
+    if (!await File(candidate).exists()) {
+      return candidate;
+    }
+
+    var counter = 1;
+    while (true) {
+      final suffix = counter.toString().padLeft(3, '0');
+      candidate = p.join(folder.path, '${base}_fps_$suffix$ext');
+      if (!await File(candidate).exists()) {
+        return candidate;
+      }
+      counter++;
+    }
+  }
+
   /// Lets the user jump straight to Explorer/file manager for a folder.
   /// See ResultScreen / HistoryScreen for the "Open Folder" button.
   Future<bool> folderExists(String path) => Directory(path).exists();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../screens/home_screen.dart';
+import '../screens/tools_home_screen.dart';
 
 class VideoSplitterApp extends StatelessWidget {
   const VideoSplitterApp({super.key});
@@ -8,7 +8,7 @@ class VideoSplitterApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Video Splitter',
+      title: 'Video Tools',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorSchemeSeed: Colors.indigo,
@@ -19,7 +19,7 @@ class VideoSplitterApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const ToolsHomeScreen(),
     );
   }
 }

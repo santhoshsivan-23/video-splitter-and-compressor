@@ -73,6 +73,72 @@ class StorageService {
     return FileUtils.uniqueVideoFolder(root.path, desiredName);
   }
 
+  /// Returns the `Video Splitter/Compressed` folder, creating it if needed.
+  Future<Directory> getCompressedFolder() async {
+    final root = await getAppRootFolder();
+    final folder = Directory(p.join(root.path, 'Compressed'));
+    if (!await folder.exists()) {
+      await folder.create(recursive: true);
+    }
+    return folder;
+  }
+
+  /// Creates a unique output file path for a compressed video,
+  /// e.g. `<root>/Compressed/<name>_compressed.mp4`
+  Future<String> createCompressedOutputPath(String originalFilePath) async {
+    final folder = await getCompressedFolder();
+    final base = p.basenameWithoutExtension(originalFilePath);
+    final ext = p.extension(originalFilePath).isNotEmpty ? p.extension(originalFilePath) : '.mp4';
+    
+    var candidate = p.join(folder.path, '${base}_compressed$ext');
+    if (!await File(candidate).exists()) {
+      return candidate;
+    }
+
+    var counter = 1;
+    while (true) {
+      final suffix = counter.toString().padLeft(3, '0');
+      candidate = p.join(folder.path, '${base}_compressed_$suffix$ext');
+      if (!await File(candidate).exists()) {
+        return candidate;
+      }
+      counter++;
+    }
+  }
+
+  /// Returns the `Video Splitter/Trimmed` folder, creating it if needed.
+  Future<Directory> getTrimmedFolder() async {
+    final root = await getAppRootFolder();
+    final folder = Directory(p.join(root.path, 'Trimmed'));
+    if (!await folder.exists()) {
+      await folder.create(recursive: true);
+    }
+    return folder;
+  }
+
+  /// Creates a unique output file path for a trimmed video,
+  /// e.g. `<root>/Trimmed/<name>_trimmed.mp4`
+  Future<String> createTrimmedOutputPath(String originalFilePath) async {
+    final folder = await getTrimmedFolder();
+    final base = p.basenameWithoutExtension(originalFilePath);
+    final ext = p.extension(originalFilePath).isNotEmpty ? p.extension(originalFilePath) : '.mp4';
+    
+    var candidate = p.join(folder.path, '${base}_trimmed$ext');
+    if (!await File(candidate).exists()) {
+      return candidate;
+    }
+
+    var counter = 1;
+    while (true) {
+      final suffix = counter.toString().padLeft(3, '0');
+      candidate = p.join(folder.path, '${base}_trimmed_$suffix$ext');
+      if (!await File(candidate).exists()) {
+        return candidate;
+      }
+      counter++;
+    }
+  }
+
   /// Lets the user jump straight to Explorer/file manager for a folder.
   /// See ResultScreen / HistoryScreen for the "Open Folder" button.
   Future<bool> folderExists(String path) => Directory(path).exists();

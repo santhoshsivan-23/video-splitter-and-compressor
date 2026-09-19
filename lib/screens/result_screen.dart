@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/split_part_model.dart';
 import '../models/video_model.dart';
 import '../services/video_service.dart';
-import 'home_screen.dart';
+import 'tools_home_screen.dart';
 
 class ResultScreen extends StatefulWidget {
   final VideoModel video;
@@ -79,7 +79,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        MaterialPageRoute(builder: (_) => const ToolsHomeScreen()),
                         (route) => false,
                       ),
                       child: const Text('Done'),

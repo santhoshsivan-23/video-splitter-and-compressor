@@ -33,8 +33,9 @@ class DatabaseHelper {
     return databaseFactory.openDatabase(
       dbPath,
       options: OpenDatabaseOptions(
-        version: 1,
+        version: 2,
         onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
         onConfigure: (db) async {
           await db.execute('PRAGMA foreign_keys = ON');
         },
@@ -55,6 +56,8 @@ class DatabaseHelper {
         split_duration INTEGER NOT NULL,
         output_folder TEXT NOT NULL,
         status TEXT NOT NULL,
+        top_subtitle TEXT,
+        bottom_subtitle TEXT,
         created_at TEXT NOT NULL
       )
     ''');
@@ -75,6 +78,17 @@ class DatabaseHelper {
     ''');
 
     await db.execute('CREATE INDEX idx_split_parts_video_id ON split_parts(video_id)');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE videos ADD COLUMN top_subtitle TEXT');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE videos ADD COLUMN bottom_subtitle TEXT');
+      } catch (_) {}
+    }
   }
 
   Future<void> close() async {

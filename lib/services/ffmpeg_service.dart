@@ -130,30 +130,65 @@ class FFmpegService {
   }
 
   /// Cuts one `[startSeconds, startSeconds + lengthSeconds)` window of
-  /// [sourcePath] out to [outputPath]. Reports nothing itself; the
-  /// caller (SplittingScreen) tracks part N / total for progress, since
-  /// each part is one discrete ffmpeg process.
+  /// [sourcePath] out to [outputPath].
+  /// If [topText] or [bottomText] are provided, burns them into the video
+  /// with horizontal centering and white font.
   Future<void> extractSegment({
     required String sourcePath,
     required String outputPath,
     required int startSeconds,
     required int lengthSeconds,
     bool reencode = false,
+    String? topText,
+    String? bottomText,
   }) async {
+    final hasTop = topText != null && topText.trim().isNotEmpty;
+    final hasBottom = bottomText != null && bottomText.trim().isNotEmpty;
+    final hasSubtitles = hasTop || hasBottom;
+    final effectiveReencode = reencode || hasSubtitles;
+
+    final filterParts = <String>[];
+    if (hasSubtitles) {
+      // Pad video to portrait (9:16 aspect ratio) with solid black background, centering video horizontally & vertically
+      filterParts.add('pad=max(iw\\,2*trunc((ih*9/16)/2)):max(ih\\,2*trunc((iw*16/9)/2)):(ow-iw)/2:(oh-ih)/2:color=black');
+
+      if (hasTop) {
+        final escaped = _escapeDrawText(topText.trim());
+        // Top subtitle around 10% from top of screen, completely outside video
+        filterParts.add("drawtext=text='$escaped':fontcolor=white:fontsize=h/28:x=(w-text_w)/2:y=h*0.10:shadowcolor=black@0.8:shadowx=2:shadowy=2");
+      }
+      if (hasBottom) {
+        final escaped = _escapeDrawText(bottomText.trim());
+        // Bottom subtitle around 10% from bottom of screen, completely outside video
+        filterParts.add("drawtext=text='$escaped':fontcolor=white:fontsize=h/28:x=(w-text_w)/2:y=h*0.90-th:shadowcolor=black@0.8:shadowx=2:shadowy=2");
+      }
+    }
+
     final args = [
       '-y',
       '-ss', startSeconds.toString(),
       '-i', sourcePath,
       '-t', lengthSeconds.toString(),
-      if (!reencode) ...['-c', 'copy'] else ...['-c:v', 'libx264', '-c:a', 'aac'],
+      if (hasSubtitles) ...[
+        '-vf', filterParts.join(','),
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-preset', 'medium',
+        '-crf', '18',
+        '-c:a', 'aac',
+      ] else if (!effectiveReencode) ...[
+        '-c', 'copy',
+      ] else ...[
+        '-c:v', 'libx264',
+        '-c:a', 'aac',
+      ],
       '-avoid_negative_ts', 'make_zero',
       outputPath,
     ];
 
     if (Platform.isAndroid) {
-      final session = await FFmpegKit.execute('-y -ss $startSeconds -i "$sourcePath" -t '
-          '$lengthSeconds ${reencode ? '-c:v libx264 -c:a aac' : '-c copy'} '
-          '-avoid_negative_ts make_zero "$outputPath"');
+      final cmd = args.map((a) => a.contains(' ') ? '"$a"' : a).join(' ');
+      final session = await FFmpegKit.execute(cmd);
       final returnCode = await session.getReturnCode();
       if (!ReturnCode.isSuccess(returnCode)) {
         final logs = await session.getAllLogsAsString();
@@ -172,6 +207,14 @@ class FFmpegService {
     }
 
     throw UnsupportedError('Unsupported platform for splitting.');
+  }
+
+  String _escapeDrawText(String text) {
+    return text
+        .replaceAll(r'\', r'\\')
+        .replaceAll("'", r"\'")
+        .replaceAll(':', r'\:')
+        .replaceAll('%', r'\%');
   }
 
   Future<String> _resolveWindowsBinary(String exeName) async {

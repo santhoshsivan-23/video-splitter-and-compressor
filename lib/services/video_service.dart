@@ -64,6 +64,8 @@ class VideoService {
     required File sourceFile,
     required MediaInfo info,
     required int splitDurationSeconds,
+    String? topSubtitle,
+    String? bottomSubtitle,
   }) async {
     final outputFolder = await _storage.createOutputFolderFor(sourceFile.path);
 
@@ -77,6 +79,8 @@ class VideoService {
       splitDurationSeconds: splitDurationSeconds,
       outputFolder: outputFolder.path,
       status: ProcessStatus.pending,
+      topSubtitle: topSubtitle,
+      bottomSubtitle: bottomSubtitle,
       createdAt: DateTime.now(),
     );
 
@@ -125,12 +129,25 @@ class VideoService {
         );
         final partId = await _partDao.insert(partModel);
 
+        // Resolve dynamic {part} tokens in subtitles
+        String? resolvedTop = video.topSubtitle;
+        if (resolvedTop != null && resolvedTop.contains('{part}')) {
+          resolvedTop = resolvedTop.replaceAll('{part}', partNumber.toString());
+        }
+
+        String? resolvedBottom = video.bottomSubtitle;
+        if (resolvedBottom != null && resolvedBottom.contains('{part}')) {
+          resolvedBottom = resolvedBottom.replaceAll('{part}', partNumber.toString());
+        }
+
         try {
           await _ffmpeg.extractSegment(
             sourcePath: video.originalPath,
             outputPath: outputPath,
             startSeconds: window.start,
             lengthSeconds: window.length,
+            topText: resolvedTop,
+            bottomText: resolvedBottom,
           );
           final size = await FileUtils.fileSizeOrNull(outputPath);
           await _partDao.updateStatus(partId, ProcessStatus.completed, fileSizeBytes: size);

@@ -1,0 +1,32 @@
+<!--
+  This project's Android folder is NOT a full `flutter create` output
+  (see README "Setting up the platform folders"). Once you run
+  `flutter create .` to generate the real android/ and windows/ folders,
+  merge these lines into android/app/src/main/AndroidManifest.xml,
+  inside the <manifest> tag and above/around the <application> tag.
+
+  Only the minimum permissions actually needed are requested, per the
+  design doc (section 12): no broad WRITE_EXTERNAL_STORAGE grab, no
+  network permissions at all, since this app is fully offline.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Android 13+ (API 33+): granular media permission instead of the
+         old broad storage permission. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+    <!-- Android 12 (API 32) and below: classic storage permission.
+         maxSdkVersion means it's simply not requested on 13+. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <application
+        android:requestLegacyExternalStorage="true"
+        ...>
+        <!-- keep whatever flutter create already generated here -->
+    </application>
+</manifest>

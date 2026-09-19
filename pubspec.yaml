@@ -1,0 +1,59 @@
+name: video_splitter
+description: A local/offline video splitter for Android and Windows.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI
+  cupertino_icons: ^1.0.6
+
+  # Video file selection
+  file_picker: ^13.1.0
+
+  # Video metadata (duration, resolution) + preview playback
+  video_player: ^2.9.2
+
+  # FFmpeg on Android (community-maintained fork; the original
+  # ffmpeg_kit_flutter was retired from pub.dev in 2025)
+  ffmpeg_kit_flutter_new: ^4.6.2
+
+  # SQLite (mobile)
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+
+  # SQLite (Windows/desktop) - sqflite has no native desktop
+  # implementation, so we use the FFI-backed factory on Windows.
+  sqflite_common_ffi: ^2.3.4
+
+  # Filesystem locations (Downloads, app documents, etc.)
+  path_provider: ^2.1.4
+
+  # Runtime permission requests on Android (storage/media)
+  permission_handler: ^11.3.1
+
+  # Resolve the platform "Downloads" folder cross-platform
+  # (falls back to manual resolution on Windows, see storage_service.dart)
+  device_info_plus: ^13.2.0
+
+  # Human-readable file sizes in history/result screens
+  filesize: ^2.0.1
+
+  # Open the output folder from the OS file manager / Explorer
+  url_launcher: ^6.3.1
+
+  # State handling
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,14 @@
+Put the official Windows builds of ffmpeg.exe and ffprobe.exe in this
+folder (windows/ffmpeg/bin/). FFmpegService automatically looks here
+first, next to the built .exe, before falling back to PATH - see
+lib/services/ffmpeg_service.dart -> _resolveWindowsBinary().
+
+Download static builds from:
+  https://www.gyan.dev/ffmpeg/builds/  (search "ffmpeg-release-essentials")
+or
+  https://ffmpeg.org/download.html#build-windows
+
+After `flutter build windows`, also copy these two .exe files into
+build/windows/x64/runner/Release/ffmpeg/bin/ (or wire up a CMake
+post-build copy step in windows/CMakeLists.txt) so they ship inside the
+final installer/output folder alongside video_splitter.exe.
